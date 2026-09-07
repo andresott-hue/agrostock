@@ -320,7 +320,15 @@
 
         <!-- Fila 1: buscador de productos -->
         <div style="margin-bottom:.75rem;">
-          <div style="font-size:12px;color:var(--txt2);margin-bottom:5px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;">Productos</div>
+          <!-- Toggle modo -->
+        <div style="display:flex;gap:6px;margin-bottom:1rem;">
+          <button class="btn btn-sm" id="btnModoProducto" onclick="setResumenModo('producto')" style="background:var(--green);color:#fff;border-color:var(--green-dark);">Por producto</button>
+          <button class="btn btn-sm" id="btnModoPa" onclick="setResumenModo('pa')">Por principio activo</button>
+        </div>
+
+        <!-- Modo producto -->
+        <div id="resumenModoProducto">
+        <div style="font-size:12px;color:var(--txt2);margin-bottom:5px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;">Productos</div>
           <div style="position:relative;">
             <input type="text" id="resumenSearch" placeholder="Buscá y agregá productos..." autocomplete="off" oninput="filtrarResumenSearch()" style="padding:9px 40px 9px 14px;font-size:14px;border:0.5px solid var(--brd2);border-radius:var(--rad);width:100%;background:var(--bg);"/>
             <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--txt2);pointer-events:none;">🔍</span>
@@ -331,6 +339,21 @@
             <button class="btn btn-sm" onclick="seleccionarTodosResumen()">Todos</button>
             <button class="btn btn-sm" onclick="limpiarResumen()">Limpiar</button>
           </div>
+        </div><!-- /resumenModoProducto -->
+
+        <!-- Modo principio activo -->
+        <div id="resumenModoPa" style="display:none;">
+          <div style="font-size:12px;color:var(--txt2);margin-bottom:5px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;">Principio activo</div>
+          <div style="position:relative;">
+            <input type="text" id="resumenPaSearch" placeholder="Ej: Glifosato, Tebuconazole..." autocomplete="off" oninput="filtrarResumenPa()" style="padding:9px 40px 9px 14px;font-size:14px;border:0.5px solid var(--brd2);border-radius:var(--rad);width:100%;background:var(--bg);"/>
+            <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--txt2);pointer-events:none;">🔍</span>
+            <div id="resumenPaDrop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:0.5px solid var(--brd2);border-radius:var(--rad);box-shadow:var(--shadow-md);max-height:200px;overflow-y:auto;z-index:100;"></div>
+          </div>
+          <div id="resumenPaChips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;min-height:20px;"></div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn-sm" onclick="limpiarResumenPa()">Limpiar</button>
+          </div>
+        </div>
         </div>
 
         <!-- Fila 2: selección de campos -->
@@ -438,6 +461,7 @@
         <option value="sanidad_animal">Sanidad animal</option>
         <option value="fertilizante">Fertilizante</option>
         <option value="semilla">Semilla</option>
+        <option value="alambre">Alambre</option>
       </select>
 
       <div style="position:relative;">
@@ -531,17 +555,17 @@
       <div class="form-row">
         <div class="form-group"><label>Nombre del producto</label><input type="text" id="npNombre" placeholder="Ej: Glifosato 48%"/></div>
         <div class="form-group"><label>Categoría</label>
-          <select id="npCategoria">
+          <select id="npCategoria" onchange="togglePrincipiosActivos()">
             <optgroup label="Agroquímicos"><option value="herbicida">Herbicida</option><option value="coadyuvante">Coadyuvante</option><option value="insecticida">Insecticida</option><option value="fungicida">Fungicida</option></optgroup>
             <option value="sanidad_animal">Sanidad animal</option><option value="fertilizante">Fertilizante</option><option value="semilla">Semilla</option><option value="alambre">Alambre</option>
           </select>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Unidad</label><select id="npUnidad"><option value="L">L (litros)</option><option value="kg">kg</option><option value="tn">tn</option><option value="dosis">dosis</option><option value="unidades">unidades</option></select></div>
+        <div class="form-group"><label>Unidad</label><select id="npUnidad"><option value="L">L (litros)</option><option value="kg">kg</option><option value="tn">tn</option><option value="dosis">dosis</option><option value="unidades">unidades</option><option value="rollos">rollos</option></select></div>
         <div class="form-group"><label>Stock mínimo de alerta</label><input type="number" id="npMinimo" placeholder="0" min="0" step="0.1"/></div>
       </div>
-      <div class="form-group" style="margin-bottom:12px;"><label>Principios activos <span style="color:var(--txt2);font-weight:400;">(separados por coma)</span></label><input type="text" id="npPrincipios" placeholder="Ej: Glifosato 48%..."/></div>
+      <div class="form-group" style="margin-bottom:12px;" id="npPrincipiosGroup"><label>Principios activos <span style="color:var(--txt2);font-weight:400;">(separados por coma)</span></label><input type="text" id="npPrincipios" placeholder="Ej: Glifosato 48%..."/></div>
       <div class="form-group" style="margin-bottom:14px;"><label>Comentarios <span style="color:var(--txt2);font-weight:400;">(opcional)</span></label><textarea id="npComentarios" placeholder="Ej: Período de carencia: 21 días."></textarea></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;"><button class="btn btn-primary" id="btnGuardarProd"><span id="btnGuardarLabel">＋ Agregar producto</span></button></div>
       <div id="adminFeedback"></div>
@@ -1505,6 +1529,18 @@ window.limpiarFiltroProductos=function(){
   renderProductosList();
 };
 
+window.togglePrincipiosActivos=function(){
+  const cat=document.getElementById('npCategoria').value;
+  const group=document.getElementById('npPrincipiosGroup');
+  if(!group)return;
+  const sinPA=['alambre','fertilizante','semilla','sanidad_animal'];
+  group.style.display=sinPA.includes(cat)?'none':'block';
+  if(sinPA.includes(cat))document.getElementById('npPrincipios').value='';
+  // Auto-set unidad for alambre
+  const unidadSel=document.getElementById('npUnidad');
+  if(unidadSel&&cat==='alambre')unidadSel.value='rollos';
+};
+
 function renderProductosList(){
   const tbody=document.getElementById('productosBody');
   if(!productos.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--txt2);">No hay productos.</td></tr>';return;}
@@ -1897,6 +1933,133 @@ window.eliminarCampo=async function(idx){
 // ── TABLA RESUMEN ──────────────────────────────────────────────
 let resumenProductos=new Set();
 
+// ── RESUMEN POR PRINCIPIO ACTIVO ──────────────────────────────
+let resumenModo='producto';
+let resumenPasActivos=new Set();
+
+window.setResumenModo=function(modo){
+  resumenModo=modo;
+  document.getElementById('resumenModoProducto').style.display=modo==='producto'?'block':'none';
+  document.getElementById('resumenModoPa').style.display=modo==='pa'?'block':'none';
+  document.getElementById('btnModoProducto').style.cssText=modo==='producto'?'background:var(--green);color:#fff;border-color:var(--green-dark);':'';
+  document.getElementById('btnModoPa').style.cssText=modo==='pa'?'background:var(--green);color:#fff;border-color:var(--green-dark);':'';
+  renderResumen();
+};
+
+// Get all unique principios activos from products
+function getAllPas(){
+  const pas=new Set();
+  productos.forEach(p=>(p.principios||[]).forEach(pa=>{
+    // Extract just the active ingredient name (before numbers/percentages)
+    const nombre=pa.split(/[\d(]/)[0].trim();
+    if(nombre.length>2)pas.add(nombre);
+  }));
+  return [...pas].sort();
+}
+
+window.filtrarResumenPa=function(){
+  const q=document.getElementById('resumenPaSearch').value.trim().toLowerCase();
+  const drop=document.getElementById('resumenPaDrop');
+  if(q.length<2){drop.style.display='none';return;}
+  const matches=getAllPas().filter(pa=>pa.toLowerCase().includes(q)&&!resumenPasActivos.has(pa));
+  if(!matches.length){drop.style.display='none';return;}
+  drop.style.display='block';
+  drop.innerHTML=matches.slice(0,10).map(pa=>
+    `<div onclick="agregarResumenPa('${pa}')" style="padding:9px 14px;cursor:pointer;border-bottom:0.5px solid var(--brd);font-size:13px;" onmouseenter="this.style.background='#f5f5f3'" onmouseleave="this.style.background='#fff'">${pa}</div>`
+  ).join('');
+};
+
+window.agregarResumenPa=function(pa){
+  resumenPasActivos.add(pa);
+  document.getElementById('resumenPaSearch').value='';
+  document.getElementById('resumenPaDrop').style.display='none';
+  renderResumenPaChips();
+  renderResumen();
+};
+
+window.quitarResumenPa=function(pa){
+  resumenPasActivos.delete(pa);
+  renderResumenPaChips();
+  renderResumen();
+};
+
+window.limpiarResumenPa=function(){
+  resumenPasActivos.clear();
+  renderResumenPaChips();
+  renderResumen();
+};
+
+function renderResumenPaChips(){
+  const el=document.getElementById('resumenPaChips');
+  if(!resumenPasActivos.size){
+    el.innerHTML='<span style="font-size:12px;color:var(--txt2);font-style:italic;">Ningún principio activo seleccionado</span>';
+    return;
+  }
+  el.innerHTML=[...resumenPasActivos].map(pa=>
+    `<span style="display:inline-flex;align-items:center;gap:5px;background:#EAF3DE;color:#3B6D11;font-size:12px;padding:4px 10px;border-radius:99px;border:0.5px solid #B5D9C8;">
+      ${pa}
+      <button onclick="quitarResumenPa('${pa}')" style="background:none;border:none;cursor:pointer;color:#3B6D11;font-size:14px;padding:0;line-height:1;">✕</button>
+    </span>`
+  ).join('');
+}
+
+// Close PA dropdown on outside click
+document.addEventListener('click',function(e){
+  const inp=document.getElementById('resumenPaSearch');
+  const drop=document.getElementById('resumenPaDrop');
+  if(inp&&drop&&!inp.contains(e.target)&&!drop.contains(e.target))drop.style.display='none';
+});
+
+function renderResumenPa(){
+  const thead=document.getElementById('resumenThead');
+  const tbody=document.getElementById('resumenTbody');
+  const camposVisibles=getCamposUsuario().filter(c=>resumenCamposActivos.has(c));
+
+  if(!resumenPasActivos.size){
+    thead.innerHTML='';
+    tbody.innerHTML=`<tr><td colspan="3" style="text-align:center;padding:3rem;color:var(--txt2);">
+      <div style="font-size:2rem;margin-bottom:.5rem;">🔬</div>
+      <div>Buscá y seleccioná principios activos para ver el resumen</div>
+    </td></tr>`;
+    return;
+  }
+
+  // Header
+  thead.innerHTML=`<tr>
+    <th style="padding:10px 14px;background:#1D9E75;color:#fff;font-weight:500;font-size:13px;min-width:180px;">Principio activo</th>
+    <th style="padding:10px 12px;background:#1D9E75;color:#fff;font-weight:500;font-size:12px;">Productos</th>
+    ${camposVisibles.map(c=>{const short=c.length>15?c.split(' ')[0]+' '+c.split(' ').slice(-1)[0]:c;return`<th style="text-align:right;padding:10px 12px;background:#1D9E75;color:#fff;font-weight:500;font-size:12px;white-space:nowrap;" title="${c}">${short}</th>`;}).join('')}
+    <th style="padding:10px 12px;background:#0F6E56;color:#fff;font-weight:600;font-size:12px;text-align:right;">Total</th>
+  </tr>`;
+
+  let rows='';
+  let isEven=false;
+  [...resumenPasActivos].sort().forEach(pa=>{
+    // Find all products containing this PA
+    const prods=productos.filter(p=>(p.principios||[]).some(x=>x.split(/[\d(]/)[0].trim().toLowerCase()===pa.toLowerCase()));
+    if(!prods.length)return;
+    const bg=isEven?'#fafaf8':'#fff';
+    isEven=!isEven;
+
+    // Group by unidad for totals
+    const unidades=[...new Set(prods.map(p=>p.unidad))];
+    const porCampo=camposVisibles.map(campo=>
+      prods.reduce((a,p)=>a+stockTotal(campo,p.id),0)
+    );
+    const total=porCampo.reduce((a,v)=>a+v,0);
+    const unidadLabel=unidades.join('/');
+    const nombresComerciales=prods.map(p=>p.nombre).join(', ');
+
+    rows+=`<tr style="background:${bg};">
+      <td style="padding:10px 14px;font-weight:600;font-size:13px;">${pa}</td>
+      <td style="padding:10px 12px;font-size:11px;color:var(--txt2);">${nombresComerciales}</td>
+      ${porCampo.map(v=>`<td style="padding:10px 12px;text-align:right;font-size:13px;${v===0?'color:#ccc;':''}">${v===0?'—':fmt(v)+' <span style="font-size:10px;color:var(--txt2);">'+unidadLabel+'</span>'}</td>`).join('')}
+      <td style="padding:10px 12px;text-align:right;font-weight:700;font-size:14px;background:#f5fdf9;">${fmt(total)} <span style="font-size:11px;color:var(--txt2);font-weight:400;">${unidadLabel}</span></td>
+    </tr>`;
+  });
+  tbody.innerHTML=rows||`<tr><td colspan="${camposVisibles.length+3}" style="text-align:center;padding:2rem;color:var(--txt2);">Sin resultados</td></tr>`;
+}
+
 window.switchStockTab=function(tab){
   document.getElementById('stock-detalle-panel').style.display=tab==='detalle'?'block':'none';
   document.getElementById('stock-resumen-panel').style.display=tab==='resumen'?'block':'none';
@@ -1998,6 +2161,7 @@ function renderResumenChips(){
 }
 
 function renderResumen(){
+  if(resumenModo==='pa'){renderResumenPa();return;}
   const thead=document.getElementById('resumenThead');
   const tbody=document.getElementById('resumenTbody');
   const camposVisibles=getCamposUsuario().filter(c=>resumenCamposActivos.has(c));
