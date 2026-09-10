@@ -993,8 +993,9 @@ function renderStock(){
         const lotes=(stock[campo]?.[p.id]||[]).filter(l=>l.cantidad>0);
         const color=p.minimo&&total<p.minimo?'#A32D2D':p.minimo&&total<p.minimo*1.5?'#BA7517':'#3B6D11';
         const status=p.minimo&&total<p.minimo?'⚠ bajo':p.minimo&&total<p.minimo*1.5?'atención':'ok';
-        if(lotes.length===1&&!lotes[0].vencimiento){
-          rows+=`<tr class="prod-row"><td style="padding-left:18px;">${p.nombre}</td><td style="text-align:right;font-weight:500;">${fmt(total)} <span style="font-size:12px;color:var(--txt2);font-weight:400;">${p.unidad}</span></td><td>${labelVenc(null)}</td><td style="text-align:center;"><span style="font-size:12px;font-weight:500;color:${color};">${status}</span></td><td style="text-align:center;"><button class="btn btn-edit" style="padding:3px 8px;font-size:11px;" onclick="abrirModalStock('${campo}','${p.id}')">✏</button></td></tr>`;
+        if(lotes.length===1){
+          const l=lotes[0];
+          rows+=`<tr class="prod-row"><td style="padding-left:18px;">${p.nombre}</td><td style="text-align:right;font-weight:500;">${fmt(total)} <span style="font-size:12px;color:var(--txt2);font-weight:400;">${p.unidad}</span></td><td>${labelVenc(l.vencimiento)}</td><td style="text-align:center;"><span style="font-size:12px;font-weight:500;color:${color};">${status}</span></td><td style="text-align:center;"><button class="btn btn-edit" style="padding:3px 8px;font-size:11px;" onclick="abrirModalStock('${campo}','${p.id}')">✏</button></td></tr>`;
         } else {
           const lo=[...lotes].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
           rows+=`<tr class="prod-row"><td style="padding-left:18px;">${p.nombre} <span style="font-size:11px;color:var(--txt2);">(${lotes.length} lote${lotes.length>1?'s':''}) </span></td><td style="text-align:right;font-weight:500;">${fmt(total)} <span style="font-size:12px;color:var(--txt2);font-weight:400;">${p.unidad}</span></td><td></td><td style="text-align:center;"><span style="font-size:12px;font-weight:500;color:${color};">${status}</span></td><td style="text-align:center;"><button class="btn btn-edit" style="padding:3px 8px;font-size:11px;" onclick="abrirModalStock('${campo}','${p.id}')">✏</button></td></tr>`;
