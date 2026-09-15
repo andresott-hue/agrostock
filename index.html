@@ -995,8 +995,9 @@ function renderStock(){
   camposShow.forEach(campo=>{
     let rows='';
     catOrder.forEach(cat=>{
-      const prodsConStock=productos.filter(p=>p.categoria===cat&&stockTotal(campo,p.id)>0);
-      const prodsSinStock=mostrarSinStock?productos.filter(p=>p.categoria===cat&&stockTotal(campo,p.id)===0):[];
+      const matchQ=p=>!stockQ||p.nombre.toLowerCase().includes(stockQ)||(p.principios||[]).some(pa=>pa.toLowerCase().includes(stockQ));
+      const prodsConStock=productos.filter(p=>p.categoria===cat&&stockTotal(campo,p.id)>0&&matchQ(p));
+      const prodsSinStock=mostrarSinStock?productos.filter(p=>p.categoria===cat&&stockTotal(campo,p.id)===0&&matchQ(p)):[];
       const prods=[...prodsConStock,...prodsSinStock];
       if(!prods.length)return;
       rows+=`<tr class="cat-row"><td colspan="5">${AGROQUIMICOS.includes(cat)?'Agroquímico — ':''} ${CAT_LABELS[cat]}</td></tr>`;
