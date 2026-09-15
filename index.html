@@ -644,6 +644,32 @@
   </div>
 </div>
 
+<!-- MODAL EDITAR LOTE -->
+<div class="modal-bg" id="modalEditLote" style="display:none;">
+  <div class="modal">
+    <h3>✏ Editar lote</h3>
+    <p style="font-size:13px;color:var(--txt2);margin-bottom:1rem;" id="modalEditLoteDesc"></p>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Cantidad</label>
+      <input type="number" id="editLoteCantidad" min="0" step="0.01" placeholder="0"/>
+    </div>
+    <div class="form-group" style="margin-bottom:4px;">
+      <label>Fecha de vencimiento <span style="color:var(--txt2);font-weight:400;">(opcional)</span></label>
+      <input type="date" id="editLoteVenc"/>
+    </div>
+    <div style="margin-top:6px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="editLoteSinVenc" onchange="toggleEditLoteVenc()" style="width:auto;padding:0;"/>
+        Sin fecha de vencimiento
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="cerrarEditLote()">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarEditLote">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modalElimMov" style="display:none;">
   <div class="modal">
     <h3>🗑 Eliminar movimiento</h3>
@@ -1014,7 +1040,7 @@ window.renderStock=function renderStock(){
         } else {
           const lo=[...lotes].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
           rows+=`<tr class="prod-row"><td style="padding-left:18px;">${p.nombre} <span style="font-size:11px;color:var(--txt2);">(${lotes.length} lote${lotes.length>1?'s':''}) </span></td><td style="text-align:right;font-weight:500;">${fmt(total)} <span style="font-size:12px;color:var(--txt2);font-weight:400;">${p.unidad}</span></td><td></td><td style="text-align:center;"><span style="font-size:12px;font-weight:500;color:${color};">${status}</span></td><td style="text-align:center;"><button class="btn btn-edit" style="padding:3px 8px;font-size:11px;" onclick="abrirModalStock('${campo}','${p.id}')">✏</button></td></tr>`;
-          lo.forEach(l=>{rows+=`<tr class="lote-row"><td style="padding-left:28px;">↳ Lote</td><td style="text-align:right;">${fmt(l.cantidad)} <span style="font-size:11px;">${p.unidad}</span></td><td>${labelVenc(l.vencimiento)}</td><td></td><td></td></tr>`;});
+          lo.forEach(l=>{rows+=`<tr class="lote-row"><td style="padding-left:28px;">↳ Lote</td><td style="text-align:right;">${fmt(l.cantidad)} <span style="font-size:11px;">${p.unidad}</span></td><td>${labelVenc(l.vencimiento)}</td><td></td><td style="text-align:center;white-space:nowrap;"><button class="btn btn-edit" style="padding:2px 7px;font-size:11px;margin-right:3px;" onclick="editarLote('${campo}','${p.id}','${l.id}')">✏</button><button class="btn btn-danger" style="padding:2px 7px;font-size:11px;" onclick="eliminarLote('${campo}','${p.id}','${l.id}')">🗑</button></td></tr>`;});
         }
       });
     });
@@ -1587,6 +1613,60 @@ function renderProductosList(){
   });
   tbody.innerHTML=rows;
 }
+
+// ── EDITAR / ELIMINAR LOTE ────────────────────────────────────
+let _editLoteCampo=null,_editLoteProdId=null,_editLoteId=null;
+
+window.editarLote=function(campo,prodId,loteId){
+  const p=productos.find(x=>x.id===prodId);
+  const lote=(stock[campo]?.[prodId]||[]).find(l=>l.id===loteId);
+  if(!lote||!p)return;
+  _editLoteCampo=campo;_editLoteProdId=prodId;_editLoteId=loteId;
+  document.getElementById('modalEditLoteDesc').textContent=`${p.nombre} — ${campo}`;
+  document.getElementById('editLoteCantidad').value=fmt(lote.cantidad);
+  document.getElementById('editLoteVenc').value=lote.vencimiento||'';
+  document.getElementById('editLoteSinVenc').checked=!lote.vencimiento;
+  document.getElementById('editLoteVenc').disabled=!lote.vencimiento;
+  document.getElementById('modalEditLote').style.display='flex';
+  document.getElementById('editLoteCantidad').focus();
+};
+
+window.toggleEditLoteVenc=function(){
+  const sinVenc=document.getElementById('editLoteSinVenc').checked;
+  const vencInput=document.getElementById('editLoteVenc');
+  vencInput.disabled=sinVenc;
+  if(sinVenc)vencInput.value='';
+};
+
+window.cerrarEditLote=function(){
+  document.getElementById('modalEditLote').style.display='none';
+};
+
+document.getElementById('btnGuardarEditLote').addEventListener('click',async function(){
+  const cant=parseFloat(document.getElementById('editLoteCantidad').value);
+  const sinVenc=document.getElementById('editLoteSinVenc').checked;
+  const venc=sinVenc?null:document.getElementById('editLoteVenc').value||null;
+  if(isNaN(cant)||cant<0){alert('Ingresá una cantidad válida.');return;}
+  const lote=(stock[_editLoteCampo]?.[_editLoteProdId]||[]).find(l=>l.id===_editLoteId);
+  if(!lote)return;
+  lote.cantidad=cant;
+  lote.vencimiento=venc;
+  if(cant===0)stock[_editLoteCampo][_editLoteProdId]=stock[_editLoteCampo][_editLoteProdId].filter(l=>l.id!==_editLoteId);
+  await saveData();
+  cerrarEditLote();
+  renderStock();renderDashboard();
+});
+
+window.eliminarLote=async function(campo,prodId,loteId){
+  const p=productos.find(x=>x.id===prodId);
+  const lote=(stock[campo]?.[prodId]||[]).find(l=>l.id===loteId);
+  if(!lote||!p)return;
+  const vencLabel=lote.vencimiento?lote.vencimiento.split('-').reverse().join('/'):'sin fecha';
+  if(!confirm(`¿Eliminar el lote de ${p.nombre} (${fmt(lote.cantidad)} ${p.unidad}, venc: ${vencLabel}) en ${campo}?`))return;
+  stock[campo][prodId]=(stock[campo][prodId]||[]).filter(l=>l.id!==loteId);
+  await saveData();
+  renderStock();renderDashboard();
+};
 
 // ── MODAL EDITAR STOCK ────────────────────────────────────────
 let _modalCampo=null,_modalProdId=null;
