@@ -311,7 +311,7 @@
       </div>
       <div style="position:relative;margin-bottom:1rem;">
         <input type="text" id="stockBuscarProd" placeholder="🔍  Buscar producto en stock..." autocomplete="off"
-          style="padding:9px 40px 9px 14px;font-size:14px;border:0.5px solid var(--brd2);border-radius:var(--rad);width:100%;background:var(--bg);"/>
+          oninput="renderStock()" style="padding:9px 40px 9px 14px;font-size:14px;border:0.5px solid var(--brd2);border-radius:var(--rad);width:100%;background:var(--bg);"/>
         <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--txt2);pointer-events:none;">🔍</span>
       </div>
       <div id="stockContainer"></div>
@@ -410,7 +410,7 @@
     </div>
     <div style="position:relative;margin-bottom:1rem;">
       <input type="text" id="movBuscarProd" placeholder="🔍  Buscar producto en movimientos..." autocomplete="off"
-        style="padding:9px 40px 9px 14px;font-size:14px;border:0.5px solid var(--brd2);border-radius:var(--rad);width:100%;background:var(--bg);"/>
+        oninput="renderMovimientos()" style="padding:9px 40px 9px 14px;font-size:14px;border:0.5px solid var(--brd2);border-radius:var(--rad);width:100%;background:var(--bg);"/>
       <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--txt2);pointer-events:none;">🔍</span>
     </div>
     <div class="card" style="overflow-x:auto;">
@@ -963,7 +963,7 @@ function renderAll(){
 }
 
 // ── Dashboard ─────────────────────────────────────────────────
-function renderDashboard(){
+window.renderDashboard=function renderDashboard(){
   const campos=getCamposUsuario();
   const asI=[],avI=[];
   campos.forEach(campo=>{
@@ -983,7 +983,7 @@ function renderDashboard(){
 }
 
 // ── Stock ─────────────────────────────────────────────────────
-function renderStock(){
+window.renderStock=function renderStock(){
   const campos=getCamposUsuario();
   const filtroCampo=document.getElementById('filtroEstablecimiento').value;
   const filtroCat=document.getElementById('filtroCategoria').value;
@@ -1153,7 +1153,7 @@ function mostrarResultado(p){
 }
 
 // ── Movimientos ────────────────────────────────────────────────
-function renderMovimientos(){
+window.renderMovimientos=function renderMovimientos(){
   const userCampos=getCamposUsuario();
   const fC=document.getElementById('filtroMovCampo').value;
   const fT=document.getElementById('filtroMovTipo').value;
