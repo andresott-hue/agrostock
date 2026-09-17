@@ -180,11 +180,12 @@
   .fb-ok{background:#DCFCE7;color:#166534;border:1px solid #BBF7D0;}.fb-err{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;}
   .hint{font-size:12px;color:var(--txt2);margin-top:5px;}
   /* Registrar movimiento */
-  .tipo-card{background:var(--bg-card);border:1.5px solid var(--brd);border-radius:var(--rad2);padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
-  .tipo-card:hover{border-color:var(--brd2);box-shadow:var(--shadow-md);}
+  .tipo-card{background:var(--bg-card);border:1.5px solid var(--brd);border-radius:var(--rad2);padding:16px 10px 12px;text-align:center;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
+  .tipo-card:hover{border-color:var(--brd2);box-shadow:var(--shadow-md);transform:translateY(-1px);}
   .tipo-card-active{border-color:var(--green) !important;box-shadow:0 0 0 3px rgba(29,158,117,.15) !important;}
-  .tipo-card-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:20px;font-weight:700;}
-  .tipo-card-label{font-size:13px;font-weight:600;color:var(--txt);}
+  .tipo-card-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;}
+  .tipo-card-label{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+  .tipo-card-desc{font-size:11px;color:var(--txt2);}
   .campo-pill{padding:10px 16px;border:1.5px solid var(--brd);border-radius:99px;background:var(--bg-card);cursor:pointer;font-size:13px;font-weight:500;color:var(--txt2);transition:all .15s;white-space:nowrap;}
   .campo-pill:hover{border-color:var(--brd2);color:var(--txt);}
   .campo-pill-active{border-color:var(--green) !important;background:var(--green-light) !important;color:var(--green-dark) !important;}
@@ -427,29 +428,61 @@
     <!-- Tipo selector - big cards -->
     <div style="margin-bottom:1.25rem;">
       <div style="font-size:12px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;">Tipo de movimiento</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" id="tipoMovCards">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;" id="tipoMovCards">
         <div class="tipo-card tipo-card-active" onclick="seleccionarTipo('ingreso')" id="tipocardIngreso">
-          <div class="tipo-card-icon" style="background:#DCFCE7;color:#166534;">↑</div>
+          <div class="tipo-card-icon" style="background:#DCFCE7;color:#166534;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/>
+            </svg>
+          </div>
           <div class="tipo-card-label">Ingreso</div>
+          <div class="tipo-card-desc">Entrada de producto</div>
         </div>
         <div class="tipo-card" onclick="seleccionarTipo('egreso')" id="tipocardEgreso">
-          <div class="tipo-card-icon" style="background:#FEE2E2;color:#DC2626;">↓</div>
+          <div class="tipo-card-icon" style="background:#FEE2E2;color:#DC2626;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 21V8M7 13l5-5 5 5"/><path d="M5 3h14"/>
+            </svg>
+          </div>
           <div class="tipo-card-label">Egreso</div>
+          <div class="tipo-card-desc">Salida de producto</div>
+        </div>
+        <div class="tipo-card" onclick="seleccionarTipo('traslado')" id="tipocardTraslado">
+          <div class="tipo-card-icon" style="background:#EDE9FE;color:#6D28D9;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M15 7l5 5-5 5"/><path d="M9 7L4 12l5 5" opacity=".5"/>
+            </svg>
+          </div>
+          <div class="tipo-card-label">Traslado</div>
+          <div class="tipo-card-desc">Entre establecimientos</div>
         </div>
         <div class="tipo-card" onclick="seleccionarTipo('ajuste')" id="tipocardAjuste">
-          <div class="tipo-card-icon" style="background:#FEF3C7;color:#D97706;">⟳</div>
+          <div class="tipo-card-icon" style="background:#FEF3C7;color:#D97706;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v4M12 17v4M4.22 6.22l2.83 2.83M16.95 16.95l2.83 2.83M3 12h4M17 12h4M6.22 17.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+          </div>
           <div class="tipo-card-label">Ajuste</div>
+          <div class="tipo-card-desc">Corregir stock</div>
         </div>
       </div>
       <input type="hidden" id="tipoMov" value="ingreso"/>
     </div>
 
     <!-- Campo -->
-    <div style="margin-bottom:1.25rem;">
-      <div style="font-size:12px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;">Establecimiento <span style="color:#DC2626;">*</span></div>
+    <div style="margin-bottom:1.25rem;" id="campoMovSection">
+      <div style="font-size:12px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;" id="campoMovLabel">Establecimiento <span style="color:#DC2626;">*</span></div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;" id="campoMovCards"></div>
       <div style="font-size:12px;color:var(--txt2);margin-top:6px;font-style:italic;" id="campoMovHint">Seleccioná el campo donde se realizó el movimiento</div>
       <input type="hidden" id="campoMov"/>
+    </div>
+
+    <!-- Campo destino (solo traslado) -->
+    <div style="margin-bottom:1.25rem;display:none;" id="campoDestinoSection">
+      <div style="font-size:12px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;">Campo destino <span style="color:#DC2626;">*</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;" id="campoDestinoCards"></div>
+      <div style="font-size:12px;color:var(--txt2);margin-top:6px;font-style:italic;" id="campoDestinoHint">Seleccioná el campo de destino</div>
+      <input type="hidden" id="campoDestino"/>
     </div>
 
     <!-- Producto, cantidad y opcionales - ocultos hasta elegir campo -->
@@ -1226,7 +1259,15 @@ function populateRegistrarForm(){
     campoCards.innerHTML=campos.map(c=>
       `<div class="campo-pill" onclick="seleccionarCampoMov('${c}')" id="campopill_${c.replace(/\s/g,'_')}">${c}</div>`
     ).join('');
-    document.getElementById('campoMov').value=''; // ninguno seleccionado por defecto
+    document.getElementById('campoMov').value='';
+  }
+  // Render destino pills
+  const campoDestinoCards=document.getElementById('campoDestinoCards');
+  if(campoDestinoCards){
+    campoDestinoCards.innerHTML=campos.map(c=>
+      `<div class="campo-pill campo-destino-pill" onclick="seleccionarCampoDestino('${c}')" id="campodestpill_${c.replace(/\s/g,'_')}">${c}</div>`
+    ).join('');
+    document.getElementById('campoDestino').value='';
   }
   // Reset tipo to ingreso
   seleccionarTipo('ingreso');
@@ -1243,6 +1284,17 @@ function populateRegistrarForm(){
   const fechaEl=document.getElementById('fechaMov');
   if(fechaEl)fechaEl.value=new Date().toISOString().split('T')[0];
 }
+
+window.seleccionarCampoDestino=function(campo){
+  document.getElementById('campoDestino').value=campo;
+  document.querySelectorAll('.campo-destino-pill').forEach(p=>p.classList.remove('campo-pill-active'));
+  const el=document.getElementById('campodestpill_'+campo.replace(/\s/g,'_'));
+  if(el)el.classList.add('campo-pill-active');
+  const hint=document.getElementById('campoDestinoHint');
+  if(hint)hint.style.display='none';
+  const btnConf=document.getElementById('btnConfirmar');
+  if(btnConf)btnConf.style.display='flex';
+};
 
 window.seleccionarCampoMov=function(campo){
   document.getElementById('campoMov').value=campo;
@@ -1431,9 +1483,12 @@ window.updateUnidad=function(){
 
 document.getElementById('btnConfirmar').addEventListener('click',async function(){
   const tipo=document.getElementById('tipoMov').value,campo=document.getElementById('campoMov').value,prodId=document.getElementById('productoMov').value;
+  const campoDestino=document.getElementById('campoDestino').value;
   const cant=parseFloat(document.getElementById('cantidadMov').value),venc=document.getElementById('vencimientoMov').value||null,obs=document.getElementById('observacionMov').value;
   const fb=document.getElementById('registroFeedback');
   if(!campo){fb.innerHTML='<div class="feedback fb-err">⚠ Seleccioná un establecimiento antes de continuar.</div>';document.getElementById('campoMovCards').scrollIntoView({behavior:'smooth',block:'nearest'});return;}
+  if(tipo==='traslado'&&!campoDestino){fb.innerHTML='<div class="feedback fb-err">⚠ Seleccioná el campo de destino.</div>';return;}
+  if(tipo==='traslado'&&campo===campoDestino){fb.innerHTML='<div class="feedback fb-err">⚠ El campo origen y destino no pueden ser el mismo.</div>';return;}
   if(!prodId){fb.innerHTML='<div class="feedback fb-err">Seleccioná un producto.</div>';return;}
   if(!cant||cant<=0){fb.innerHTML='<div class="feedback fb-err">Ingresá una cantidad válida.</div>';return;}
   const p=productos.find(x=>x.id===prodId);
@@ -1484,6 +1539,33 @@ document.getElementById('btnConfirmar').addEventListener('click',async function(
     }
   const fechaMovVal=document.getElementById('fechaMov')?.value;
   const fechaMovFmt=fechaMovVal?fechaMovVal.split('-').reverse().join('/'):new Date().toLocaleDateString('es-UY');
+  // Traslado: egreso del origen + ingreso al destino
+  if(tipo==='traslado'){
+    // Egreso del campo origen (FEFO)
+    const lotesOrigen=(stock[campo]?.[prodId]||[]).filter(l=>l.cantidad>0);
+    const totalOrigen=lotesOrigen.reduce((a,l)=>a+l.cantidad,0);
+    if(totalOrigen<cant){fb.innerHTML=`<div class="feedback fb-err">Stock insuficiente en ${campo}. Disponible: ${fmt(totalOrigen)} ${p.unidad}</div>`;return;}
+    const loOrigen=[...lotesOrigen].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
+    let rest=cant;
+    for(const l of loOrigen){if(rest<=0)break;const d=Math.min(l.cantidad,rest);l.cantidad-=d;rest-=d;}
+    stock[campo][prodId]=lotesOrigen.filter(l=>l.cantidad>0);
+    // Ingreso al campo destino
+    if(!stock[campoDestino])stock[campoDestino]={};
+    if(!stock[campoDestino][prodId])stock[campoDestino][prodId]=[];
+    const lotesDestino=stock[campoDestino][prodId];
+    const exDestino=lotesDestino.find(l=>!l.vencimiento);
+    if(exDestino){exDestino.cantidad+=cant;}
+    else{lotesDestino.push({id:'l_'+Date.now(),cantidad:cant,vencimiento:null});}
+    // Registrar dos movimientos
+    const ts=Date.now();
+    movimientos.push({id:ts,fecha:fechaMovFmt,campo,productoId:prodId,categoria:p.categoria,tipo:'egreso',cantidad:cant,vencimiento:null,responsable:currentUserData?.nombre||currentUserData?.email||'Admin',obs:`Traslado → ${campoDestino}${obs?' | '+obs:''}`});
+    movimientos.push({id:ts+1,fecha:fechaMovFmt,campo:campoDestino,productoId:prodId,categoria:p.categoria,tipo:'ingreso',cantidad:cant,vencimiento:null,responsable:currentUserData?.nombre||currentUserData?.email||'Admin',obs:`Traslado ← ${campo}${obs?' | '+obs:''}`});
+    await saveData();
+    fb.innerHTML=`<div class="feedback fb-ok">✓ Traslado registrado: ${fmt(cant)} ${p.unidad} de <strong>${p.nombre}</strong> de <strong>${campo}</strong> a <strong>${campoDestino}</strong></div>`;
+    document.getElementById('cantidadMov').value='';document.getElementById('observacionMov').value='';
+    return;
+  }
+
   movimientos.push({id:Date.now(),fecha:fechaMovFmt,campo,productoId:prodId,categoria:p.categoria,tipo,cantidad:cant,vencimiento:venc||null,responsable:currentUserData?.nombre||currentUserData?.email||'Administrador',obs});
   await saveData();
   const nuevoStock=stockTotal(campo,prodId);
@@ -1698,6 +1780,33 @@ document.getElementById('btnGuardarStock').addEventListener('click',async functi
   const p=productos.find(x=>x.id===_modalProdId);
   const fechaMovVal=document.getElementById('fechaMov')?.value;
   const fechaMovFmt=fechaMovVal?fechaMovVal.split('-').reverse().join('/'):new Date().toLocaleDateString('es-UY');
+  // Traslado: egreso del origen + ingreso al destino
+  if(tipo==='traslado'){
+    // Egreso del campo origen (FEFO)
+    const lotesOrigen=(stock[campo]?.[prodId]||[]).filter(l=>l.cantidad>0);
+    const totalOrigen=lotesOrigen.reduce((a,l)=>a+l.cantidad,0);
+    if(totalOrigen<cant){fb.innerHTML=`<div class="feedback fb-err">Stock insuficiente en ${campo}. Disponible: ${fmt(totalOrigen)} ${p.unidad}</div>`;return;}
+    const loOrigen=[...lotesOrigen].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
+    let rest=cant;
+    for(const l of loOrigen){if(rest<=0)break;const d=Math.min(l.cantidad,rest);l.cantidad-=d;rest-=d;}
+    stock[campo][prodId]=lotesOrigen.filter(l=>l.cantidad>0);
+    // Ingreso al campo destino
+    if(!stock[campoDestino])stock[campoDestino]={};
+    if(!stock[campoDestino][prodId])stock[campoDestino][prodId]=[];
+    const lotesDestino=stock[campoDestino][prodId];
+    const exDestino=lotesDestino.find(l=>!l.vencimiento);
+    if(exDestino){exDestino.cantidad+=cant;}
+    else{lotesDestino.push({id:'l_'+Date.now(),cantidad:cant,vencimiento:null});}
+    // Registrar dos movimientos
+    const ts=Date.now();
+    movimientos.push({id:ts,fecha:fechaMovFmt,campo,productoId:prodId,categoria:p.categoria,tipo:'egreso',cantidad:cant,vencimiento:null,responsable:currentUserData?.nombre||currentUserData?.email||'Admin',obs:`Traslado → ${campoDestino}${obs?' | '+obs:''}`});
+    movimientos.push({id:ts+1,fecha:fechaMovFmt,campo:campoDestino,productoId:prodId,categoria:p.categoria,tipo:'ingreso',cantidad:cant,vencimiento:null,responsable:currentUserData?.nombre||currentUserData?.email||'Admin',obs:`Traslado ← ${campo}${obs?' | '+obs:''}`});
+    await saveData();
+    fb.innerHTML=`<div class="feedback fb-ok">✓ Traslado registrado: ${fmt(cant)} ${p.unidad} de <strong>${p.nombre}</strong> de <strong>${campo}</strong> a <strong>${campoDestino}</strong></div>`;
+    document.getElementById('cantidadMov').value='';document.getElementById('observacionMov').value='';
+    return;
+  }
+
   movimientos.push({id:Date.now(),fecha:fechaMovFmt,campo:_modalCampo,productoId:_modalProdId,categoria:p?p.categoria:'',tipo:'ajuste',cantidad:val,vencimiento:venc||null,responsable:(currentUserData?.nombre||currentUserData?.email||'Admin')+' (corrección)',obs:'Corrección de stock'});
   await saveData();
   cerrarModalStock();
