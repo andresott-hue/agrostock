@@ -479,7 +479,11 @@
 
     <!-- Campo destino (solo traslado) -->
     <div style="margin-bottom:1.25rem;display:none;" id="campoDestinoSection">
-      <div style="font-size:12px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;">Campo destino <span style="color:#DC2626;">*</span></div>
+      <div style="background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--rad2);padding:12px 14px;margin-bottom:.75rem;display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M15 7l5 5-5 5"/></svg>
+        <span style="font-size:12px;font-weight:600;color:var(--green-dark);text-transform:uppercase;letter-spacing:.05em;">Campo destino <span style="color:#DC2626;">*</span></span>
+        <span style="font-size:12px;color:var(--txt2);margin-left:4px;">— adónde va el producto</span>
+      </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;" id="campoDestinoCards"></div>
       <div style="font-size:12px;color:var(--txt2);margin-top:6px;font-style:italic;" id="campoDestinoHint">Seleccioná el campo de destino</div>
       <input type="hidden" id="campoDestino"/>
@@ -1314,10 +1318,36 @@ window.seleccionarCampoMov=function(campo){
 
 window.seleccionarTipo=function(tipo){
   document.getElementById('tipoMov').value=tipo;
-  ['ingreso','egreso','ajuste'].forEach(t=>{
+  ['ingreso','egreso','ajuste','traslado'].forEach(t=>{
     const card=document.getElementById('tipocard'+t.charAt(0).toUpperCase()+t.slice(1));
     if(card)card.classList.toggle('tipo-card-active',t===tipo);
   });
+  const esTraslado=tipo==='traslado';
+  // Update campo origen label
+  const campoLabel=document.getElementById('campoMovLabel');
+  if(campoLabel)campoLabel.innerHTML=esTraslado
+    ?'<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Campo origen</span> <span style="color:#DC2626;">*</span>'
+    :'Establecimiento <span style="color:#DC2626;">*</span>';
+  // Show/hide destino section
+  const destSection=document.getElementById('campoDestinoSection');
+  if(destSection)destSection.style.display=esTraslado?'block':'none';
+  // Reset destino selection
+  if(esTraslado){
+    document.getElementById('campoDestino').value='';
+    document.querySelectorAll('.campo-destino-pill').forEach(p=>p.classList.remove('campo-pill-active'));
+    const destHint=document.getElementById('campoDestinoHint');
+    if(destHint)destHint.style.display='block';
+  }
+  // Reset origin
+  document.getElementById('campoMov').value='';
+  document.querySelectorAll('.campo-pill:not(.campo-destino-pill)').forEach(p=>p.classList.remove('campo-pill-active'));
+  // Hide form until campo selected
+  const resto=document.getElementById('registrarResto');
+  if(resto)resto.style.display='none';
+  const btnConf=document.getElementById('btnConfirmar');
+  if(btnConf)btnConf.style.display='none';
+  const campoHint=document.getElementById('campoMovHint');
+  if(campoHint){campoHint.style.display='block';campoHint.textContent=esTraslado?'Seleccioná el campo de donde sale el producto':'Seleccioná el campo donde se realizó el movimiento';}
   toggleVencimiento();
   limpiarProductoMov();
   actualizarSelectorLote();
