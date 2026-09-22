@@ -1571,21 +1571,34 @@ document.getElementById('btnConfirmar').addEventListener('click',async function(
   const fechaMovFmt=fechaMovVal?fechaMovVal.split('-').reverse().join('/'):new Date().toLocaleDateString('es-UY');
   // Traslado: egreso del origen + ingreso al destino
   if(tipo==='traslado'){
-    // Egreso del campo origen (FEFO)
-    const lotesOrigen=(stock[campo]?.[prodId]||[]).filter(l=>l.cantidad>0);
-    const totalOrigen=lotesOrigen.reduce((a,l)=>a+l.cantidad,0);
+    // Trabajar con copia profunda del stock del origen para evitar mutaciones inesperadas
+    if(!stock[campo])stock[campo]={};
+    if(!stock[campo][prodId])stock[campo][prodId]=[];
+    const lotesOrigenRef=stock[campo][prodId];
+    const totalOrigen=lotesOrigenRef.reduce((a,l)=>a+l.cantidad,0);
     if(totalOrigen<cant){fb.innerHTML=`<div class="feedback fb-err">Stock insuficiente en ${campo}. Disponible: ${fmt(totalOrigen)} ${p.unidad}</div>`;return;}
-    const loOrigen=[...lotesOrigen].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
+    // Descontar del origen por FEFO
+    const loOrigenSorted=[...lotesOrigenRef].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
     let rest=cant;
-    for(const l of loOrigen){if(rest<=0)break;const d=Math.min(l.cantidad,rest);l.cantidad-=d;rest-=d;}
-    stock[campo][prodId]=lotesOrigen.filter(l=>l.cantidad>0);
-    // Ingreso al campo destino
+    for(const l of loOrigenSorted){
+      if(rest<=0)break;
+      const lOrig=lotesOrigenRef.find(x=>x.id===l.id);
+      if(!lOrig)continue;
+      const d=Math.min(lOrig.cantidad,rest);
+      lOrig.cantidad=parseFloat((lOrig.cantidad-d).toFixed(4));
+      rest=parseFloat((rest-d).toFixed(4));
+    }
+    stock[campo][prodId]=lotesOrigenRef.filter(l=>l.cantidad>0);
+    // Agregar al destino
     if(!stock[campoDestino])stock[campoDestino]={};
     if(!stock[campoDestino][prodId])stock[campoDestino][prodId]=[];
     const lotesDestino=stock[campoDestino][prodId];
-    const exDestino=lotesDestino.find(l=>!l.vencimiento);
-    if(exDestino){exDestino.cantidad+=cant;}
-    else{lotesDestino.push({id:'l_'+Date.now(),cantidad:cant,vencimiento:null});}
+    // Mantener el mismo vencimiento del lote de origen si había uno solo
+    const loteOrigenPrincipal=loOrigenSorted[0];
+    const vencDestino=loOrigenSorted.length===1?loteOrigenPrincipal.vencimiento:null;
+    const exDestino=lotesDestino.find(l=>l.vencimiento===vencDestino);
+    if(exDestino){exDestino.cantidad=parseFloat((exDestino.cantidad+cant).toFixed(4));}
+    else{lotesDestino.push({id:'l_'+Date.now(),cantidad:cant,vencimiento:vencDestino||null});}
     // Registrar dos movimientos
     const ts=Date.now();
     movimientos.push({id:ts,fecha:fechaMovFmt,campo,productoId:prodId,categoria:p.categoria,tipo:'egreso',cantidad:cant,vencimiento:null,responsable:currentUserData?.nombre||currentUserData?.email||'Admin',obs:`Traslado → ${campoDestino}${obs?' | '+obs:''}`});
@@ -1812,21 +1825,34 @@ document.getElementById('btnGuardarStock').addEventListener('click',async functi
   const fechaMovFmt=fechaMovVal?fechaMovVal.split('-').reverse().join('/'):new Date().toLocaleDateString('es-UY');
   // Traslado: egreso del origen + ingreso al destino
   if(tipo==='traslado'){
-    // Egreso del campo origen (FEFO)
-    const lotesOrigen=(stock[campo]?.[prodId]||[]).filter(l=>l.cantidad>0);
-    const totalOrigen=lotesOrigen.reduce((a,l)=>a+l.cantidad,0);
+    // Trabajar con copia profunda del stock del origen para evitar mutaciones inesperadas
+    if(!stock[campo])stock[campo]={};
+    if(!stock[campo][prodId])stock[campo][prodId]=[];
+    const lotesOrigenRef=stock[campo][prodId];
+    const totalOrigen=lotesOrigenRef.reduce((a,l)=>a+l.cantidad,0);
     if(totalOrigen<cant){fb.innerHTML=`<div class="feedback fb-err">Stock insuficiente en ${campo}. Disponible: ${fmt(totalOrigen)} ${p.unidad}</div>`;return;}
-    const loOrigen=[...lotesOrigen].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
+    // Descontar del origen por FEFO
+    const loOrigenSorted=[...lotesOrigenRef].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
     let rest=cant;
-    for(const l of loOrigen){if(rest<=0)break;const d=Math.min(l.cantidad,rest);l.cantidad-=d;rest-=d;}
-    stock[campo][prodId]=lotesOrigen.filter(l=>l.cantidad>0);
-    // Ingreso al campo destino
+    for(const l of loOrigenSorted){
+      if(rest<=0)break;
+      const lOrig=lotesOrigenRef.find(x=>x.id===l.id);
+      if(!lOrig)continue;
+      const d=Math.min(lOrig.cantidad,rest);
+      lOrig.cantidad=parseFloat((lOrig.cantidad-d).toFixed(4));
+      rest=parseFloat((rest-d).toFixed(4));
+    }
+    stock[campo][prodId]=lotesOrigenRef.filter(l=>l.cantidad>0);
+    // Agregar al destino
     if(!stock[campoDestino])stock[campoDestino]={};
     if(!stock[campoDestino][prodId])stock[campoDestino][prodId]=[];
     const lotesDestino=stock[campoDestino][prodId];
-    const exDestino=lotesDestino.find(l=>!l.vencimiento);
-    if(exDestino){exDestino.cantidad+=cant;}
-    else{lotesDestino.push({id:'l_'+Date.now(),cantidad:cant,vencimiento:null});}
+    // Mantener el mismo vencimiento del lote de origen si había uno solo
+    const loteOrigenPrincipal=loOrigenSorted[0];
+    const vencDestino=loOrigenSorted.length===1?loteOrigenPrincipal.vencimiento:null;
+    const exDestino=lotesDestino.find(l=>l.vencimiento===vencDestino);
+    if(exDestino){exDestino.cantidad=parseFloat((exDestino.cantidad+cant).toFixed(4));}
+    else{lotesDestino.push({id:'l_'+Date.now(),cantidad:cant,vencimiento:vencDestino||null});}
     // Registrar dos movimientos
     const ts=Date.now();
     movimientos.push({id:ts,fecha:fechaMovFmt,campo,productoId:prodId,categoria:p.categoria,tipo:'egreso',cantidad:cant,vencimiento:null,responsable:currentUserData?.nombre||currentUserData?.email||'Admin',obs:`Traslado → ${campoDestino}${obs?' | '+obs:''}`});
