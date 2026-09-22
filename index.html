@@ -1899,46 +1899,75 @@ document.getElementById('btnGuardarEditMov').addEventListener('click',async func
   const nuevoObs=document.getElementById('editMovObs').value;
   if(isNaN(nuevaCant)||nuevaCant<0){alert('Ingresá una cantidad válida.');return;}
 
-  // Revertir el efecto del movimiento original en el stock
+  // Aplicar ajuste diferencial en el stock (más preciso que revertir + reaplicar)
   if(!stock[m.campo])stock[m.campo]={};
   if(!stock[m.campo][m.productoId])stock[m.campo][m.productoId]=[];
   const lotes=stock[m.campo][m.productoId];
 
-  if(m.tipo==='ingreso'){
-    // Revertir: descontar lo que se ingresó
-    let rest=m.cantidad;
-    const lo=[...lotes].sort((a,b)=>{if(!b.vencimiento)return -1;if(!a.vencimiento)return 1;return b.vencimiento.localeCompare(a.vencimiento);});
-    for(const l of lo){if(rest<=0)break;const d=Math.min(l.cantidad,rest);l.cantidad-=d;rest-=d;}
-    stock[m.campo][m.productoId]=lotes.filter(l=>l.cantidad>0);
-  } else if(m.tipo==='egreso'){
-    // Revertir: devolver al lote correcto
-    let ex=null;
-    if(m.vencimiento){
-      ex=lotes.find(l=>l.vencimiento===m.vencimiento);
+  if(m.tipo==='ingreso'&&nuevoTipo==='ingreso'){
+    // Mismo tipo: aplicar diferencia directamente
+    const diff=nuevaCant-m.cantidad; // positivo = más ingresado, negativo = menos
+    if(diff>0){
+      // Agregar diferencia
+      const ex=nuevoVenc?lotes.find(l=>l.vencimiento===nuevoVenc):lotes.find(l=>!l.vencimiento);
+      if(ex){ex.cantidad+=diff;}else{lotes.push({id:'l_'+Date.now(),cantidad:diff,vencimiento:nuevoVenc||null});}
+    } else if(diff<0){
+      // Descontar diferencia
+      const absDiff=Math.abs(diff);
+      const total=lotes.reduce((a,l)=>a+l.cantidad,0);
+      if(total<absDiff){alert(`No hay suficiente stock para reducir este ingreso. Stock actual: ${fmt(total)}`);return;}
+      const lo=[...lotes].sort((a,b)=>{if(!b.vencimiento)return -1;if(!a.vencimiento)return 1;return b.vencimiento.localeCompare(a.vencimiento);});
+      let rest=absDiff;
+      for(const l of lo){if(rest<=0)break;const lOrig=lotes.find(x=>x.id===l.id);if(!lOrig)continue;const d=Math.min(lOrig.cantidad,rest);lOrig.cantidad-=d;rest-=d;}
+      stock[m.campo][m.productoId]=lotes.filter(l=>l.cantidad>0);
     }
-    if(!ex&&lotes.length>0){
-      const sorted=[...lotes].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
-      ex=lotes.find(l=>l.id===sorted[0].id);
+    // Si cambió el vencimiento, actualizar el lote correspondiente
+  } else if(m.tipo==='egreso'&&nuevoTipo==='egreso'){
+    // Mismo tipo: diferencia (si egresó más antes, ahora devuelve; si egresó menos, descuenta más)
+    const diff=m.cantidad-nuevaCant; // positivo = antes egresó más (devolver), negativo = antes egresó menos (descontar más)
+    if(diff>0){
+      // Devolver diferencia al stock
+      let ex=lotes.find(l=>l.vencimiento===m.vencimiento);
+      if(!ex&&lotes.length>0){const s=[...lotes].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});ex=lotes.find(l=>l.id===s[0].id);}
+      if(ex){ex.cantidad+=diff;}else{lotes.push({id:'l_'+Date.now(),cantidad:diff,vencimiento:m.vencimiento||null});}
+    } else if(diff<0){
+      // Descontar más
+      const absDiff=Math.abs(diff);
+      const total=lotes.reduce((a,l)=>a+l.cantidad,0);
+      if(total<absDiff){alert(`Stock insuficiente para este ajuste. Stock actual: ${fmt(total)}`);return;}
+      const lo=[...lotes].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
+      let rest=absDiff;
+      for(const l of lo){if(rest<=0)break;const lOrig=lotes.find(x=>x.id===l.id);if(!lOrig)continue;const d=Math.min(lOrig.cantidad,rest);lOrig.cantidad-=d;rest-=d;}
+      stock[m.campo][m.productoId]=lotes.filter(l=>l.cantidad>0);
     }
-    if(ex){ex.cantidad+=m.cantidad;}
-    else{lotes.push({id:'l_'+Date.now(),cantidad:m.cantidad,vencimiento:m.vencimiento||null});}
-  }
-
-  // Aplicar el nuevo movimiento
-  const lotesNuevos=stock[m.campo][m.productoId];
-  if(nuevoTipo==='ingreso'){
-    const ex=nuevoVenc?lotesNuevos.find(l=>l.vencimiento===nuevoVenc):lotesNuevos.find(l=>!l.vencimiento);
-    if(ex){ex.cantidad+=nuevaCant;}else{lotesNuevos.push({id:'l_'+Date.now(),cantidad:nuevaCant,vencimiento:nuevoVenc||null});}
-  } else if(nuevoTipo==='egreso'){
-    const total=lotesNuevos.reduce((a,l)=>a+l.cantidad,0);
-    if(total<nuevaCant){alert(`Stock insuficiente para este egreso. Stock actual: ${fmt(total)}`);return;}
-    const lo=[...lotesNuevos].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
-    let rest=nuevaCant;
-    for(const l of lo){if(rest<=0)break;const d=Math.min(l.cantidad,rest);l.cantidad-=d;rest-=d;}
-    stock[m.campo][m.productoId]=lotesNuevos.filter(l=>l.cantidad>0);
   } else {
-    // Ajuste: reemplazar directamente
-    stock[m.campo][m.productoId]=[{id:'l_'+Date.now(),cantidad:nuevaCant,vencimiento:nuevoVenc||null}];
+    // Cambio de tipo: revertir original y aplicar nuevo
+    // Revertir original
+    if(m.tipo==='ingreso'){
+      const lo=[...lotes].sort((a,b)=>{if(!b.vencimiento)return -1;if(!a.vencimiento)return 1;return b.vencimiento.localeCompare(a.vencimiento);});
+      let rest=m.cantidad;
+      for(const l of lo){if(rest<=0)break;const lOrig=lotes.find(x=>x.id===l.id);if(!lOrig)continue;const d=Math.min(lOrig.cantidad,rest);lOrig.cantidad-=d;rest-=d;}
+      stock[m.campo][m.productoId]=lotes.filter(l=>l.cantidad>0);
+    } else if(m.tipo==='egreso'){
+      let ex=lotes.find(l=>l.vencimiento===m.vencimiento);
+      if(!ex&&lotes.length>0){const s=[...lotes].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});ex=lotes.find(l=>l.id===s[0].id);}
+      if(ex){ex.cantidad+=m.cantidad;}else{lotes.push({id:'l_'+Date.now(),cantidad:m.cantidad,vencimiento:m.vencimiento||null});}
+    }
+    // Aplicar nuevo
+    const lotesNuevos=stock[m.campo][m.productoId];
+    if(nuevoTipo==='ingreso'){
+      const ex=nuevoVenc?lotesNuevos.find(l=>l.vencimiento===nuevoVenc):lotesNuevos.find(l=>!l.vencimiento);
+      if(ex){ex.cantidad+=nuevaCant;}else{lotesNuevos.push({id:'l_'+Date.now(),cantidad:nuevaCant,vencimiento:nuevoVenc||null});}
+    } else if(nuevoTipo==='egreso'){
+      const total=lotesNuevos.reduce((a,l)=>a+l.cantidad,0);
+      if(total<nuevaCant){alert(`Stock insuficiente. Stock actual: ${fmt(total)}`);return;}
+      const lo=[...lotesNuevos].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
+      let rest=nuevaCant;
+      for(const l of lo){if(rest<=0)break;const d=Math.min(l.cantidad,rest);l.cantidad-=d;rest-=d;}
+      stock[m.campo][m.productoId]=lotesNuevos.filter(l=>l.cantidad>0);
+    } else {
+      stock[m.campo][m.productoId]=[{id:'l_'+Date.now(),cantidad:nuevaCant,vencimiento:nuevoVenc||null}];
+    }
   }
 
   // Actualizar el movimiento
