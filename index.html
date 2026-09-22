@@ -651,6 +651,19 @@
     <h2 style="margin-bottom:1rem;">Configuración</h2>
 
     <!-- Campos -->
+    <!-- Recalcular stock -->
+    <div class="card" style="max-width:600px;margin-bottom:1rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;">
+        <div>
+          <div style="font-size:15px;font-weight:500;">🔄 Recalcular stock desde movimientos</div>
+          <div style="font-size:13px;color:var(--txt2);margin-top:4px;line-height:1.6;">Recalcula el stock actual repasando todo el historial de movimientos en orden cronológico. Útil para corregir inconsistencias entre el historial y el stock mostrado.</div>
+        </div>
+        <button class="btn btn-warn" style="white-space:nowrap;flex-shrink:0;" onclick="recalcularStock()">Recalcular</button>
+      </div>
+      <div id="recalcularFeedback" style="margin-top:12px;"></div>
+    </div>
+
+    <!-- Campos -->
     <div class="card" style="max-width:600px;margin-bottom:1rem;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
         <div>
@@ -2208,6 +2221,104 @@ function renderCamposConfig(){
       <button class="btn btn-danger btn-sm" onclick="eliminarCampo(${i})">Eliminar</button>
     </div>`).join('');
 }
+
+window.recalcularStock=async function(){
+  const fb=document.getElementById('recalcularFeedback');
+  fb.innerHTML='<div class="feedback" style="background:#FEF3C7;color:#D97706;border:1px solid #FDE68A;">⏳ Calculando... no cerrés esta página.</div>';
+
+  // Ordenar movimientos cronológicamente
+  const movOrdenados=[...movimientos].sort((a,b)=>{
+    // Parsear fechas dd/mm/yyyy
+    const parseF=f=>{if(!f)return 0;const p=f.split('/');return p.length===3?new Date(p[2],p[1]-1,p[0]).getTime():0;};
+    return parseF(a.fecha)-parseF(b.fecha)||a.id-b.id;
+  });
+
+  // Resetear stock a cero
+  const nuevoStock={};
+  CAMPOS.forEach(c=>{
+    nuevoStock[c]={};
+    productos.forEach(p=>{nuevoStock[c][p.id]=[];});
+  });
+
+  let errores=0;
+  const cambios=[];
+
+  // Replay de movimientos
+  movOrdenados.forEach(m=>{
+    const campo=m.campo;
+    const prodId=m.productoId;
+    const cant=parseFloat(m.cantidad)||0;
+    if(!cant||cant<=0)return;
+    if(!nuevoStock[campo])nuevoStock[campo]={};
+    if(!nuevoStock[campo][prodId])nuevoStock[campo][prodId]=[];
+    const lotes=nuevoStock[campo][prodId];
+
+    if(m.tipo==='ingreso'){
+      const ex=m.vencimiento?lotes.find(l=>l.vencimiento===m.vencimiento):lotes.find(l=>!l.vencimiento);
+      if(ex){ex.cantidad+=cant;}
+      else{lotes.push({id:'l_replay_'+m.id,cantidad:cant,vencimiento:m.vencimiento||null});}
+    } else if(m.tipo==='egreso'){
+      const total=lotes.reduce((a,l)=>a+l.cantidad,0);
+      if(total<cant){errores++;return;} // movimiento inconsistente, ignorar
+      const lo=[...lotes].sort((a,b)=>{if(!a.vencimiento)return 1;if(!b.vencimiento)return -1;return a.vencimiento.localeCompare(b.vencimiento);});
+      let rest=cant;
+      for(const l of lo){
+        if(rest<=0)break;
+        const lOrig=lotes.find(x=>x.id===l.id);
+        if(!lOrig)continue;
+        const d=Math.min(lOrig.cantidad,rest);
+        lOrig.cantidad-=d;rest-=d;
+      }
+      nuevoStock[campo][prodId]=lotes.filter(l=>l.cantidad>0);
+    } else if(m.tipo==='ajuste'){
+      nuevoStock[campo][prodId]=[{id:'l_replay_'+m.id,cantidad:cant,vencimiento:m.vencimiento||null}];
+    }
+    // traslado ya genera egreso+ingreso por separado en el historial
+  });
+
+  // Comparar con stock actual y mostrar diferencias
+  productos.forEach(p=>{
+    CAMPOS.forEach(c=>{
+      const anterior=stockTotal(c,p.id);
+      const nuevo=(nuevoStock[c]?.[p.id]||[]).reduce((a,l)=>a+l.cantidad,0);
+      if(Math.abs(anterior-nuevo)>0.001){
+        cambios.push({campo:c,nombre:p.nombre,unidad:p.unidad,anterior,nuevo,diff:nuevo-anterior});
+      }
+    });
+  });
+
+  if(cambios.length===0&&errores===0){
+    fb.innerHTML='<div class="feedback fb-ok">✓ El stock ya está correcto. No se encontraron inconsistencias.</div>';
+    return;
+  }
+
+  // Mostrar resumen y pedir confirmación
+  let resumen=`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:var(--rad);padding:12px 14px;margin-bottom:10px;">
+    <div style="font-weight:600;margin-bottom:8px;color:#D97706;">⚠ Se encontraron ${cambios.length} inconsistencia${cambios.length>1?'s':''}${errores>0?' ('+errores+' movimientos ignorados por stock insuficiente)':''}:</div>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;">
+      <tr style="color:var(--txt2);border-bottom:1px solid #FDE68A;"><th style="text-align:left;padding:4px 8px;">Campo</th><th style="text-align:left;padding:4px 8px;">Producto</th><th style="text-align:right;padding:4px 8px;">Stock actual</th><th style="text-align:right;padding:4px 8px;">Stock correcto</th><th style="text-align:right;padding:4px 8px;">Diferencia</th></tr>
+      ${cambios.map(c=>`<tr style="border-bottom:1px solid #FEF3C7;"><td style="padding:4px 8px;">${c.campo}</td><td style="padding:4px 8px;">${c.nombre}</td><td style="text-align:right;padding:4px 8px;">${fmt(c.anterior)} ${c.unidad}</td><td style="text-align:right;padding:4px 8px;font-weight:600;">${fmt(c.nuevo)} ${c.unidad}</td><td style="text-align:right;padding:4px 8px;color:${c.diff>0?'#166534':'#DC2626'};">${c.diff>0?'+':''}${fmt(c.diff)} ${c.unidad}</td></tr>`).join('')}
+    </table>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-primary" onclick="confirmarRecalculo()">✓ Aplicar correcciones</button>
+    <button class="btn" onclick="document.getElementById('recalcularFeedback').innerHTML=''">Cancelar</button>
+  </div>`;
+  fb.innerHTML=resumen;
+
+  // Store for confirmation
+  window._nuevoStockCalculado=nuevoStock;
+};
+
+window.confirmarRecalculo=async function(){
+  const fb=document.getElementById('recalcularFeedback');
+  fb.innerHTML='<div class="feedback" style="background:#FEF3C7;color:#D97706;">⏳ Aplicando correcciones...</div>';
+  stock=window._nuevoStockCalculado;
+  await saveData();
+  renderStock();renderDashboard();
+  fb.innerHTML='<div class="feedback fb-ok">✓ Stock recalculado y guardado correctamente.</div>';
+  window._nuevoStockCalculado=null;
+};
 
 window.agregarCampo=async function(){
   const input=document.getElementById('nuevoCampoInput');
